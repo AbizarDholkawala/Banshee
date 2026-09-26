@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banshee - Speech to Text</title>
+    <meta name="description"
+        content="Offline speech-to-text transcription tool. Transcribe audio files or record from your microphone directly on your device.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+</head>
+
+<body>
+    <!-- Ambient background glow -->
+    <div class="ambient-glow ambient-glow--1"></div>
+    <div class="ambient-glow ambient-glow--2"></div>
+    <div class="noise-overlay"></div>
+
+    <div class="app-container">
+        <!-- Header — full width across both columns -->
+        <header class="header" id="header">
+            <div class="header__logo">
+                <div class="header__icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" x2="12" y1="19" y2="22" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="header__title">Banshee</h1>
+                    <p class="header__subtitle">Offline Speech-to-Text</p>
+                </div>
+            </div>
+            <div class="header__badge">
+                <span class="badge badge--engine">Secure Offline Engine</span>
+                <span class="badge badge--status" id="statusBadge">Ready</span>
+            </div>
+        </header>
+
+        <!-- Two-column workspace -->
+        <div class="workspace">
+
+            <!-- ===================== LEFT PANEL ===================== -->
+            <aside class="panel panel--left">
+
+                <!-- Audio Input Card -->
+                <section class="card card--input" id="inputSection">
+                    <div class="card__header">
+                        <h2 class="card__title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" x2="12" y1="3" y2="15" />
+                            </svg>
+                            Audio Input
+                        </h2>
+                        <div class="input-toggle" id="inputToggle">
+                            <button class="input-toggle__btn input-toggle__btn--active" data-mode="upload"
+                                id="btnUploadMode">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" x2="12" y1="3" y2="15" />
+                                </svg>
+                                Upload
+                            </button>
+                            <button class="input-toggle__btn" data-mode="record" id="btnRecordMode">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                </svg>
+                                Record
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upload Zone -->
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-zone__content">
+                            <div class="upload-zone__icon">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" x2="12" y1="3" y2="15" />
+                                </svg>
+                            </div>
+                            <p class="upload-zone__text">Drop audio or video here</p>
+                            <p class="upload-zone__hint">mp3, wav, m4a, flac, mp4, mkv…</p>
+                            <input type="file" id="fileInput"
+                                accept="audio/*,video/*,.mp3,.wav,.flac,.ogg,.m4a,.wma,.aac,.mp4,.mkv,.avi,.mov,.webm"
+                                hidden>
+                        </div>
+                        <div class="upload-zone__file-info" id="fileInfo" style="display:none;">
+                            <div class="file-chip">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M9 18V5l12-2v13" />
+                                    <circle cx="6" cy="18" r="3" />
+                                    <circle cx="18" cy="16" r="3" />
+                                </svg>
+                                <span id="fileName"></span>
+                                <span id="fileSize" class="file-chip__size"></span>
+                                <button class="file-chip__remove" id="removeFile" title="Remove file">✕</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Record Zone -->
+                    <div class="record-zone" id="recordZone" style="display:none;">
+                        <div class="record-zone__visualizer" id="visualizerContainer">
+                            <canvas id="waveformCanvas" width="600" height="100"></canvas>
+                        </div>
+                        <div class="record-zone__controls">
+                            <button class="record-btn" id="btnRecord" title="Start Recording">
+                                <span class="record-btn__dot"></span>
+                            </button>
+                            <span class="record-zone__timer" id="recordTimer">00:00</span>
+                        </div>
+                        <p class="record-zone__hint" id="recordHint">Click the button to start recording</p>
+                    </div>
+                </section>
+
+                <!-- Settings Card -->
+                <section class="card card--settings" id="settingsSection">
+                    <div class="card__header">
+                        <h2 class="card__title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path
+                                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Settings
+                        </h2>
+                    </div>
+
+                    <div class="settings-grid">
+                        <!-- Model Selection -->
+                        <div class="setting-group">
+                            <label class="setting-label">Model</label>
+                            <p class="setting-hint">Larger models = better accuracy, slower speed</p>
+                            <div class="model-selector" id="modelSelector">
+                                <button class="model-chip" data-model="tiny" title="~75 MB — Fastest">
+                                    <span class="model-chip__name">Tiny</span>
+                                    <span class="model-chip__meta">75 MB</span>
+                                </button>
+                                <button class="model-chip model-chip--active" data-model="base"
+                                    title="~150 MB — Good balance">
+                                    <span class="model-chip__name">Base</span>
+                                    <span class="model-chip__meta">150 MB</span>
+                                </button>
+                                <button class="model-chip" data-model="small" title="~500 MB — Solid accuracy">
+                                    <span class="model-chip__name">Small</span>
+                                    <span class="model-chip__meta">500 MB</span>
+                                </button>
+                                <button class="model-chip" data-model="medium" title="~1.5 GB — High accuracy">
+                                    <span class="model-chip__name">Medium</span>
+                                    <span class="model-chip__meta">1.5 GB</span>
+                                </button>
+                                <button class="model-chip" data-model="large-v3" title="~3 GB — Maximum accuracy">
+                                    <span class="model-chip__name">Large v3</span>
+                                    <span class="model-chip__meta">3 GB</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Output Format -->
+                        <div class="setting-group">
+                            <label class="setting-label">Output Format</label>
+                            <div class="format-selector" id="formatSelector">
+                                <button class="format-chip format-chip--active" data-format="txt" title="Plain text">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <polyline points="14 2 14 8 20 8" />
+                                        <line x1="16" y1="13" x2="8" y2="13" />
+                                        <line x1="16" y1="17" x2="8" y2="17" />
+                                    </svg>
+                                    TXT
+                                </button>
+                                <button class="format-chip" data-format="srt" title="SubRip subtitles">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                                        <line x1="7" y1="2" x2="7" y2="22" />
+                                        <line x1="17" y1="2" x2="17" y2="22" />
+                                        <line x1="2" y1="12" x2="22" y2="12" />
+                                        <line x1="2" y1="7" x2="7" y2="7" />
+                                        <line x1="2" y1="17" x2="7" y2="17" />
+                                    </svg>
+                                    SRT
+                                </button>
+                                <button class="format-chip" data-format="vtt" title="WebVTT subtitles">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polygon points="23 7 16 12 23 17 23 7" />
+                                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                                    </svg>
+                                    VTT
+                                </button>
+                                <button class="format-chip" data-format="json" title="Structured JSON">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polyline points="16 18 22 12 16 6" />
+                                        <polyline points="8 6 2 12 8 18" />
+                                    </svg>
+                                    JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Language -->
+                        <div class="setting-group">
+                            <label class="setting-label" for="languageSelect">Language</label>
+                            <div class="select-wrapper">
+                                <select id="languageSelect" class="custom-select">
+                                    <option value="">Auto-detect</option>
+                                    <option value="en">English</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="fr">French</option>
+                                    <option value="de">German</option>
+                                    <option value="it">Italian</option>
+                                    <option value="pt">Portuguese</option>
+                                    <option value="nl">Dutch</option>
+                                    <option value="ru">Russian</option>
+                                    <option value="zh">Chinese</option>
+                                    <option value="ja">Japanese</option>
+                                    <option value="ko">Korean</option>
+                                    <option value="ar">Arabic</option>
+                                    <option value="hi">Hindi</option>
+                                    <option value="tr">Turkish</option>
+                                    <option value="pl">Polish</option>
+                                    <option value="sv">Swedish</option>
+                                    <option value="da">Danish</option>
+                                    <option value="fi">Finnish</option>
+                                    <option value="no">Norwegian</option>
+                                    <option value="uk">Ukrainian</option>
+                                </select>
+                                <svg class="select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Beam Size -->
+                        <div class="setting-group">
+                            <label class="setting-label" for="beamSize">Beam Size</label>
+                            <p class="setting-hint">Higher = more accurate, slower</p>
+                            <div class="range-wrapper">
+                                <input type="range" id="beamSize" min="1" max="10" value="5" class="custom-range">
+                                <span class="range-value" id="beamSizeValue">5</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Transcribe Button -->
+                <button class="transcribe-btn" id="btnTranscribe" disabled>
+                    <span class="transcribe-btn__content" id="transcribeBtnContent">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        Transcribe
+                    </span>
+                    <span class="transcribe-btn__loading" id="transcribeBtnLoading" style="display:none;">
+                        <span class="spinner"></span>
+                        Transcribing…
+                    </span>
+                </button>
+
+                <!-- Progress Bar (inside left panel) -->
+                <div class="progress-bar" id="progressBar" style="display:none;">
+                    <div class="progress-bar__track">
+                        <div class="progress-bar__fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-bar__text" id="progressText">Loading model…</p>
+                </div>
+
+            </aside>
+
+            <!-- ===================== RIGHT PANEL ===================== -->
+            <main class="panel panel--right" id="rightPanel">
+
+                <!-- Empty state — always visible until transcript appears -->
+                <div class="output-empty" id="outputEmpty">
+                    <div class="output-empty__icon">
+                        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <line x1="10" y1="9" x2="8" y2="9" />
+                        </svg>
+                    </div>
+                    <h3 class="output-empty__title">Your transcript will appear here</h3>
+                    <p class="output-empty__hint">Upload or record audio on the left,<br>then press Transcribe to start.
+                    </p>
+                    <div class="output-empty__lines" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                </div>
+
+                <!-- Results Section — shown after transcription -->
+                <section class="output-results" id="resultsSection" style="display:none;">
+                    <!-- Header row: title + actions -->
+                    <div class="output-results__header">
+                        <h2 class="output-results__title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg>
+                            Transcript
+                        </h2>
+                        <div class="results-actions">
+                            <button class="action-btn" id="btnCopy" title="Copy to clipboard">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                                Copy
+                            </button>
+                            <button class="action-btn" id="btnDownload" title="Download transcript">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" x2="12" y1="15" y2="3" />
+                                </svg>
+                                Download
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Metadata Pills -->
+                    <div class="metadata-bar" id="metadataBar">
+                        <span class="meta-pill" id="metaLang">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="2" y1="12" x2="22" y2="12" />
+                                <path
+                                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>
+                            <span id="metaLangText">—</span>
+                        </span>
+                        <span class="meta-pill" id="metaDuration">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            <span id="metaDurationText">—</span>
+                        </span>
+                        <span class="meta-pill" id="metaSpeed">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                            </svg>
+                            <span id="metaSpeedText">—</span>
+                        </span>
+                        <span class="meta-pill" id="metaModel">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                            </svg>
+                            <span id="metaModelText">—</span>
+                        </span>
+                    </div>
+
+                    <!-- Main text output -->
+                    <div class="results-content" id="resultsContent">
+                        <pre class="results-text" id="resultsText"></pre>
+                    </div>
+
+                    <!-- Segment Timeline -->
+                    <div class="segments-timeline" id="segmentsTimeline" style="display:none;">
+                        <h3 class="segments-title">Segments</h3>
+                        <div class="segments-list" id="segmentsList"></div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Banshee v1.0 · Isolated &amp; Secure Offline Speech Processing</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+
+</html>
